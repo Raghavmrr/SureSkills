@@ -1,13 +1,15 @@
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs').promises; // Switched to promises for non-blocking I/O
 const path = require('path');
 const session = require('express-session');
 const app = express();
+
 const PORT = process.env.PORT || 8080;
 const DB = path.join(__dirname, 'bookings.json');
 const CSV_DB = path.join(__dirname, 'approved_slots.csv');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'sureskills123';
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -16,11 +18,13 @@ app.use(session({
   saveUninitialized: false
 }));
 
+// Middleware to protect routes
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.authenticated) return next();
   res.redirect('/login');
 }
 
+// Login Page
 app.get('/login', (req, res) => {
   res.send(`
     <html>
@@ -44,7 +48,7 @@ app.get('/login', (req, res) => {
             <input type="password" name="password" placeholder="Admin Password" required autofocus>
             <button type="submit" class="login-btn">Login</button>
           </form>
-          ${req.query.error ? `<p style="color:var(--danger); margin-top:1rem">${req.query.error}</p>` : ''}
+          ${req.query.error ? `<p style="color:red; margin-top:1rem">${req.query.error}</p>` : ''}
         </div>
       </body>
     </html>
@@ -61,11 +65,10 @@ app.post('/login', (req, res) => {
   }
 });
 
-
+// Protect static admin files and specific API routes
 app.get('/admin.html', ensureAuthenticated);
 app.use('/api', (req, res, next) => {
-
-  if (req.method === 'POST' && req.path === '/bookings') return next();
+  if (req.method === 'POST' && req.path === '/bookings') return next(); // Allow public booking creation
   ensureAuthenticated(req, res, next);
 });
 
@@ -76,33 +79,51 @@ app.get('/auth/logout', (req, res) => {
   res.redirect('/login');
 });
 
-function writeApprovedToCSV(db) {
+// --- Database Helper Functions (Now Asynchronous) ---
+
+async function writeApprovedToCSV(db) {
   const approved = db.filter(b => b.status === 'approved');
   const headers = ['ID', 'CandidateName', 'InterviewStart', 'InterviewEnd', 'Round', 'Company'];
+  
   if (approved.length === 0) {
-    fs.writeFileSync(CSV_DB, headers.join(',') + '\n', 'utf8');
+    await fs.writeFile(CSV_DB, headers.join(',') + '\n', 'utf8');
     return;
   }
+  
   const clean = str => String(str).replace(/,/g, ' ').replace(/\n/g, ' ');
   const rows = approved.map(b => [
     clean(b.id), clean(b.candidateName), clean(b.interviewStart), clean(b.interviewEnd), clean(b.round), clean(b.company)
   ].join(','));
-  fs.writeFileSync(CSV_DB, headers.join(',') + '\n' + rows.join('\n'), 'utf8');
+  
+  await fs.writeFile(CSV_DB, headers.join(',') + '\n' + rows.join('\n'), 'utf8');
 }
 
-function readDB() {
-  try { return JSON.parse(fs.readFileSync(DB, 'utf8')); }
-  catch { return []; }
-}
-function writeDB(data) {
-  fs.writeFileSync(DB, JSON.stringify(data, null, 2), 'utf8');
-  writeApprovedToCSV(data);
+async function readDB() {
+  try { 
+    const data = await fs.readFile(DB, 'utf8');
+    return JSON.parse(data); 
+  } catch (error) { 
+    // If file doesn't exist or is invalid JSON, return empty array
+    return []; 
+  }
 }
 
-app.get('/api/todays-slots', (req, res) => {
+async function writeDB(data) {
+  await fs.writeFile(DB, JSON.stringify(data, null, 2), 'utf8');
+  await writeApprovedToCSV(data);
+}
+
+// --- API Routes ---
+
+app.get('/api/todays-slots', async (req, res) => {
   try {
-    if (!fs.existsSync(CSV_DB)) return res.json([]);
-    const csvData = fs.readFileSync(CSV_DB, 'utf8');
+    try {
+      await fs.access(CSV_DB); // Check if file exists asynchronously
+    } catch {
+      return res.json([]); // File does not exist
+    }
+
+    const csvData = await fs.readFile(CSV_DB, 'utf8');
     const lines = csvData.trim().split(/\r?\n/);
     if (lines.length <= 1) return res.json([]);
 
@@ -119,68 +140,82 @@ app.get('/api/todays-slots', (req, res) => {
     });
     res.json(slots);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to read today\'s slots.' });
   }
 });
 
-app.get('/api/bookings', (req, res) => {
-  res.json(readDB());
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const data = await readDB();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bookings.' });
+  }
 });
 
-app.post('/api/bookings', (req, res) => {
-  const body = req.body;
-  const db = readDB();
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const body = req.body;
+    const db = await readDB();
 
+    const booking = {
+      id: 'BK' + Date.now(),
+      candidateName: String(body.candidateName || '').trim(),
+      contactNumber: String(body.contactNumber || '').trim(),
+      company: String(body.company || '').trim(),
+      role: String(body.role || '').trim(),
+      interviewStart: String(body.interviewStart || '').trim(),
+      interviewEnd: String(body.interviewEnd || '').trim(),
+      round: String(body.round || '').trim(),
+      meetingLink: String(body.meetingLink || '').trim(),
+      jd: String(body.jd || '').trim(),
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      calendarAdded: false,
+    };
 
-  const booking = {
-    id: 'BK' + Date.now(),
-    candidateName: String(body.candidateName || '').trim(),
-    contactNumber: String(body.contactNumber || '').trim(),
-    company: String(body.company || '').trim(),
-    role: String(body.role || '').trim(),
-    interviewStart: String(body.interviewStart || '').trim(),
-    interviewEnd: String(body.interviewEnd || '').trim(),
-    round: String(body.round || '').trim(),
-    meetingLink: String(body.meetingLink || '').trim(),
-    jd: String(body.jd || '').trim(),
-    status: 'pending',
-    submittedAt: new Date().toISOString(),
-    calendarAdded: false,
-  };
-
-  db.push(booking);
-  writeDB(db);
-  res.status(201).json(booking);
+    db.push(booking);
+    await writeDB(db);
+    res.status(201).json(booking);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create booking.' });
+  }
 });
 
-app.patch('/api/bookings/:id', (req, res) => {
-  const db = readDB();
-  const index = db.findIndex(b => b.id === req.params.id);
-  if (index === -1) return res.status(404).json({ error: 'Not found' });
+app.patch('/api/bookings/:id', async (req, res) => {
+  try {
+    const db = await readDB();
+    const index = db.findIndex(b => b.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: 'Booking not found' });
 
-  const allowed = ['status', 'calendarAdded', 'calendarEventId', 'reviewedAt'];
-  allowed.forEach(k => {
-    if (req.body[k] !== undefined) db[index][k] = req.body[k];
-  });
+    const allowed = ['status', 'calendarAdded', 'calendarEventId', 'reviewedAt'];
+    allowed.forEach(k => {
+      if (req.body[k] !== undefined) db[index][k] = req.body[k];
+    });
 
-  writeDB(db);
-  res.json(db[index]);
+    await writeDB(db);
+    res.json(db[index]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update booking.' });
+  }
 });
 
-app.delete('/api/bookings/:id', (req, res) => {
-  const db = readDB();
-  const index = db.findIndex(b => b.id === req.params.id);
-  if (index === -1) return res.status(404).json({ error: 'Not found' });
+app.delete('/api/bookings/:id', async (req, res) => {
+  try {
+    const db = await readDB();
+    const index = db.findIndex(b => b.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: 'Booking not found' });
 
-  db.splice(index, 1);
-  writeDB(db);
-  res.json({ success: true });
+    db.splice(index, 1);
+    await writeDB(db);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete booking.' });
+  }
 });
-
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`SureSkills server running!`);
   console.log(`Port:     ${PORT}`);
   console.log(`Admin:    /admin.html (Protected by Password)\n`);
 });
-
