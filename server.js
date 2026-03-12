@@ -177,7 +177,6 @@ app.delete('/api/bookings/:id', (req, res) => {
   res.json({ success: true });
 });
 
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`SureSkills server running!`);
   console.log(`Port:     ${PORT}`);
