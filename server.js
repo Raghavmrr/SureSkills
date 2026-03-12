@@ -1,17 +1,13 @@
 require('dotenv').config();
 const express = require('express');
-const fs      = require('fs');
-const path    = require('path');
+const fs = require('fs');
+const path = require('path');
 const session = require('express-session');
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 8080;
-const DB   = path.join(__dirname, 'bookings.json');
+const DB = path.join(__dirname, 'bookings.json');
 const CSV_DB = path.join(__dirname, 'approved_slots.csv');
-
-// ── Authentication Setup ──────────────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'sureskills123';
-
-// ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -20,13 +16,11 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// Auth Check Middleware
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.authenticated) return next();
   res.redirect('/login');
 }
 
-// ── Static Files & Public Routes ─────────────────────────────────────────────
 app.get('/login', (req, res) => {
   res.send(`
     <html>
@@ -67,27 +61,24 @@ app.post('/login', (req, res) => {
   }
 });
 
-// Protect all admin and API routes
+
 app.get('/admin.html', ensureAuthenticated);
 app.use('/api', (req, res, next) => {
-  // Allow public POST to bookings (the form)
+
   if (req.method === 'POST' && req.path === '/bookings') return next();
-  // Protect everything else
   ensureAuthenticated(req, res, next);
 });
 
 app.use(express.static(__dirname));
 
-// ── Auth Routes ──────────────────────────────────────────────────────────────
 app.get('/auth/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
 
-// ── Helper: write CSV ─────────────────────────────────────────────────────────
 function writeApprovedToCSV(db) {
   const approved = db.filter(b => b.status === 'approved');
-  const headers = ['ID','CandidateName','InterviewStart','InterviewEnd','Round','Company'];
+  const headers = ['ID', 'CandidateName', 'InterviewStart', 'InterviewEnd', 'Round', 'Company'];
   if (approved.length === 0) {
     fs.writeFileSync(CSV_DB, headers.join(',') + '\n', 'utf8');
     return;
@@ -99,7 +90,6 @@ function writeApprovedToCSV(db) {
   fs.writeFileSync(CSV_DB, headers.join(',') + '\n' + rows.join('\n'), 'utf8');
 }
 
-// ── API Helpers ───────────────────────────────────────────────────────────────
 function readDB() {
   try { return JSON.parse(fs.readFileSync(DB, 'utf8')); }
   catch { return []; }
@@ -109,14 +99,13 @@ function writeDB(data) {
   writeApprovedToCSV(data);
 }
 
-// ── API Routes (Protected except POST /api/bookings) ──────────────────────────
 app.get('/api/todays-slots', (req, res) => {
   try {
     if (!fs.existsSync(CSV_DB)) return res.json([]);
     const csvData = fs.readFileSync(CSV_DB, 'utf8');
     const lines = csvData.trim().split(/\r?\n/);
     if (lines.length <= 1) return res.json([]);
-    
+
     const slots = lines.slice(1).map(line => {
       const parts = line.split(',');
       return {
@@ -129,7 +118,7 @@ app.get('/api/todays-slots', (req, res) => {
       };
     });
     res.json(slots);
-  } catch(err) {
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -140,23 +129,23 @@ app.get('/api/bookings', (req, res) => {
 
 app.post('/api/bookings', (req, res) => {
   const body = req.body;
-  const db   = readDB();
-  
-  // Basic validation and conflict check...
+  const db = readDB();
+
+
   const booking = {
-    id:            'BK' + Date.now(),
-    candidateName:  String(body.candidateName || '').trim(),
-    contactNumber:  String(body.contactNumber || '').trim(),
-    company:        String(body.company || '').trim(),
-    role:           String(body.role || '').trim(),
+    id: 'BK' + Date.now(),
+    candidateName: String(body.candidateName || '').trim(),
+    contactNumber: String(body.contactNumber || '').trim(),
+    company: String(body.company || '').trim(),
+    role: String(body.role || '').trim(),
     interviewStart: String(body.interviewStart || '').trim(),
-    interviewEnd:   String(body.interviewEnd || '').trim(),
-    round:          String(body.round || '').trim(),
-    meetingLink:    String(body.meetingLink || '').trim(),
-    jd:             String(body.jd || '').trim(),
-    status:         'pending',
-    submittedAt:    new Date().toISOString(),
-    calendarAdded:  false,
+    interviewEnd: String(body.interviewEnd || '').trim(),
+    round: String(body.round || '').trim(),
+    meetingLink: String(body.meetingLink || '').trim(),
+    jd: String(body.jd || '').trim(),
+    status: 'pending',
+    submittedAt: new Date().toISOString(),
+    calendarAdded: false,
   };
 
   db.push(booking);
@@ -165,11 +154,11 @@ app.post('/api/bookings', (req, res) => {
 });
 
 app.patch('/api/bookings/:id', (req, res) => {
-  const db      = readDB();
-  const index   = db.findIndex(b => b.id === req.params.id);
+  const db = readDB();
+  const index = db.findIndex(b => b.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Not found' });
 
-  const allowed = ['status','calendarAdded','calendarEventId','reviewedAt'];
+  const allowed = ['status', 'calendarAdded', 'calendarEventId', 'reviewedAt'];
   allowed.forEach(k => {
     if (req.body[k] !== undefined) db[index][k] = req.body[k];
   });
@@ -179,7 +168,7 @@ app.patch('/api/bookings/:id', (req, res) => {
 });
 
 app.delete('/api/bookings/:id', (req, res) => {
-  const db    = readDB();
+  const db = readDB();
   const index = db.findIndex(b => b.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Not found' });
 
@@ -188,10 +177,10 @@ app.delete('/api/bookings/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n✅  SureSkills server running!`);
-  console.log(`   Port:     ${PORT}`);
-  console.log(`   Admin:    /admin.html (Protected by Password)\n`);
+  console.log(`SureSkills server running!`);
+  console.log(`Port:     ${PORT}`);
+  console.log(`Admin:    /admin.html (Protected by Password)\n`);
 });
 
