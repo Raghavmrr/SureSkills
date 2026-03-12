@@ -50,11 +50,11 @@ app.get('/login', (req, res) => {
             <input type="password" name="password" placeholder="Admin Password" required autofocus>
             <button type="submit" class="login-btn">Login</button>
           </form>
-          ${req.query.error ? `<p style="color:var(--danger); margin-top:1rem">${req.query.error}</p>` : ''}
+          \${req.query.error ? \`<p style="color:var(--danger); margin-top:1rem">\${req.query.error}</p>\` : ''}
         </div>
       </body>
     </html>
-  `);
+  \`);
 });
 
 app.post('/login', (req, res) => {
@@ -190,8 +190,7 @@ app.delete('/api/bookings/:id', (req, res) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n✅  SureSkills server running!`);
+  console.log('\n✅  SureSkills server running!');
   console.log(`   Port:     ${PORT}`);
   console.log(`   Admin:    /admin.html (Protected by Password)\n`);
 });
-
