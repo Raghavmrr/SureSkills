@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book an Interview — SureSkills</title>
+  <meta name="description" content="Schedule your interview slot with SureSkills. Fill in your details, pick a date and time, and submit for admin approval." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- Topbar -->
+    <nav class="topbar">
+      <img src="SureSkillLogo.png" alt="SureSkills Logo" class="logo-img" />
+      <span class="brand">Sure<span>Skills</span></span>
+      <div class="nav-links">
+        <a href="index.html" class="active">Book Interview</a>
+        <a href="slots.html">Booked Slots</a>
+        <a href="admin.html">Admin</a>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content">
+
+      <!-- Alert area -->
+      <div id="alertArea"></div>
+
+      <!-- Today's Slots section -->
+      <div class="card" id="todaysSlotsCard" style="display: none; margin-bottom: 24px; padding: 1.5rem; background: var(--bg);">
+        <h2 style="margin-bottom: 12px; font-size: 1.25rem;">🕒 Today's Approved Slots</h2>
+        <div id="todaysSlotsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Dynamically populated from CSV via app.js -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h1>📅 Book an Interview</h1>
+          <p class="subtitle">Fill in the details below. Your request will be reviewed and confirmed by the admin.</p>
+        </div>
+
+        <form id="bookingForm" novalidate>
+
+          <!-- Section: Candidate Info -->
+          <div class="section-divider">Candidate Information</div>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label for="candidateName">Full Name *</label>
+              <input type="text" id="candidateName" placeholder="e.g. Riya Sharma" required />
+            </div>
+
+            <div class="form-group">
+              <label for="contactNumber">Contact Number *</label>
+              <input type="tel" id="contactNumber" placeholder="e.g. +91 98765 43210" required />
+            </div>
+
+            <div class="form-group">
+              <label for="company">Company *</label>
+              <input type="text" id="company" placeholder="e.g. Infosys, TCS, Google" required />
+            </div>
+
+            <div class="form-group">
+              <label for="role">Role / Position *</label>
+              <input type="text" id="role" placeholder="e.g. Senior Software Engineer" required />
+            </div>
+
+          </div>
+
+          <!-- Section: Interview Details -->
+          <div class="section-divider">Interview Details</div>
+          <div class="form-grid">
+
+            <div class="form-group full">
+              <label for="interviewDate">Interview Date *</label>
+              <input type="date" id="interviewDate" required />
+            </div>
+
+            <div class="form-group full">
+              <label for="interviewStartTime">Start Time *</label>
+              <input type="time" id="interviewStartTime" required />
+            </div>
+
+            <div class="form-group full">
+              <label for="interviewEndTime">End Time *</label>
+              <input type="time" id="interviewEndTime" required />
+            </div>
+
+            <div class="form-group">
+              <label for="round">Round *</label>
+              <select id="round" required>
+                <option value="" disabled selected>Select a round…</option>
+                <option value="Round 1">Round 1</option>
+                <option value="Round 2">Round 2</option>
+                <option value="Round 3">Round 3</option>
+                <option value="Round 4">Round 4</option>
+                <option value="Round 5">Round 5</option>
+                <option value="HR Round">HR Round</option>
+                <option value="Technical Round">Technical Round</option>
+              </select>
+            </div>
+
+            <div class="form-group full">
+              <label for="meetingLink">Meeting Link</label>
+              <input type="url" id="meetingLink" placeholder="https://meet.google.com/... or Zoom / Teams URL" />
+            </div>
+
+            <div class="form-group full">
+              <label for="jd">JD</label>
+              <textarea id="jd" placeholder="Paste the Job Description here…"></textarea>
+            </div>
+
+          </div>
+
+          <div style="margin-top: 28px;">
+            <button type="submit" class="btn btn-primary btn-full" id="submitBtn">
+              <span>🚀</span> Submit Booking Request
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

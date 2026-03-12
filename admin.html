@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — SureSkills</title>
+  <meta name="description" content="SureSkills admin dashboard — manage, approve, and export interview bookings." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- Topbar -->
+    <nav class="topbar">
+      <img src="SureSkillLogo.png" alt="SureSkills Logo" class="logo-img" />
+      <span class="brand">Sure<span>Skills</span> <span style="color:var(--muted);font-weight:400;font-size:0.85rem">/ Admin</span></span>
+        <div class="nav-links">
+        <a href="index.html">Book Interview</a>
+        <a href="slots.html">Booked Slots</a>
+        <a href="admin.html" class="active">Admin</a>
+        <a href="/auth/logout" style="color:var(--danger)">Logout</a>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content" style="max-width:1200px">
+      <div id="alertArea"></div>
+
+      <!-- Dashboard content -->
+      <div id="dashContent">
+
+        <!-- Live indicator -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:0.8rem;color:var(--muted)">
+          <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;animation:pulse 2s infinite"></span>
+          Live — auto-refreshes every 5 seconds &nbsp;|&nbsp; All bookings stored on server (shared across all devices)
+        </div>
+
+        <!-- Header row -->
+        <div class="dash-header">
+          <div>
+            <h1>📋 Interview Bookings</h1>
+            <p style="color:var(--muted);font-size:0.875rem;margin-top:4px">Review, approve, and manage all interview requests.</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary  btn-sm" id="filterAll">All</button>
+            <button class="btn btn-ghost   btn-sm" id="filterPending">⏳ Pending</button>
+            <button class="btn btn-ghost   btn-sm" id="filterApproved">✅ Approved</button>
+            <button class="btn btn-ghost   btn-sm" id="filterRejected">❌ Rejected</button>
+            <button class="btn btn-ghost   btn-sm" id="exportCsvBtn">⬇ Export CSV</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="dash-stats" style="margin-bottom:24px">
+          <div class="stat-pill">Total <span class="val" id="statTotal">0</span></div>
+          <div class="stat-pill" style="color:var(--warn)">Pending  <span class="val" id="statPending">0</span></div>
+          <div class="stat-pill" style="color:var(--success)">Approved <span class="val" id="statApproved">0</span></div>
+          <div class="stat-pill" style="color:var(--danger)">Rejected <span class="val" id="statRejected">0</span></div>
+        </div>
+
+        <!-- Table -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table id="bookingsTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Candidate</th>
+                  <th>Company</th>
+                  <th>Role</th>
+                  <th>Round</th>
+                  <th>Time Slot</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsBody"></tbody>
+            </table>
+          </div>
+          <div id="emptyState" class="empty-state hidden">
+            <div class="icon">📭</div>
+            <h3>No bookings yet</h3>
+            <p>Submitted interview requests will appear here automatically.</p>
+          </div>
+        </div>
+
+      </div><!-- /dashContent -->
+    </main>
+  </div>
+
+
+
+  <!-- ── Detail Modal ───────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="detailModal">
+    <div class="modal-box wide">
+      <div class="modal-header">
+        <h2>📄 Booking Details</h2>
+        <button class="modal-close" id="detailClose">✕</button>
+      </div>
+      <div class="detail-grid" id="detailContent"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px" id="detailActions"></div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+
+  <script src="admin.js"></script>
+</body>
+</html>

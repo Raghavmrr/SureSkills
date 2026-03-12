@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booked Slots — SureSkills</title>
+  <meta name="description" content="View all approved SureSkills interview slots." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- Topbar -->
+    <nav class="topbar">
+      <img src="SureSkillLogo.png" alt="SureSkills Logo" class="logo-img" />
+      <span class="brand">Sure<span>Skills</span></span>
+      <div class="nav-links">
+        <a href="index.html">Book Interview</a>
+        <a href="slots.html" class="active">Booked Slots</a>
+        <a href="admin.html">Admin</a>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content">
+      <div class="card" style="padding: 1.5rem; background: var(--bg);">
+        <h2 style="margin-bottom: 24px; font-size: 1.5rem; text-align: center;">📅 All Approved Interview Slots</h2>
+        
+        <div id="allSlotsContainer" class="dashboard-grid" style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="text-align:center; padding: 40px; color: var(--muted);">
+            <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
+            Loading approved slots...
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="slots.js"></script>
+</body>
+</html>

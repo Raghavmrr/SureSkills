@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sureskills
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
