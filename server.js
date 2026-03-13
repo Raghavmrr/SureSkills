@@ -18,13 +18,12 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// Middleware to protect routes
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.authenticated) return next();
   res.redirect('/login');
 }
 
-// Login Page
+
 app.get('/login', (req, res) => {
   res.send(`
     <html>
@@ -65,10 +64,11 @@ app.post('/login', (req, res) => {
   }
 });
 
-// Protect static admin files and specific API routes
 app.get('/admin.html', ensureAuthenticated);
 app.use('/api', (req, res, next) => {
-  if (req.method === 'POST' && req.path === '/bookings') return next(); // Allow public booking creation
+  if (req.method === 'POST' && req.path === '/bookings') return next();
+  if (req.method === 'GET' && req.path === '/todays-slots') return next();
+  
   ensureAuthenticated(req, res, next);
 });
 
@@ -78,8 +78,6 @@ app.get('/auth/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
-
-// --- Database Helper Functions (Now Asynchronous) ---
 
 async function writeApprovedToCSV(db) {
   const approved = db.filter(b => b.status === 'approved');
@@ -103,7 +101,6 @@ async function readDB() {
     const data = await fs.readFile(DB, 'utf8');
     return JSON.parse(data); 
   } catch (error) { 
-    // If file doesn't exist or is invalid JSON, return empty array
     return []; 
   }
 }
@@ -113,14 +110,14 @@ async function writeDB(data) {
   await writeApprovedToCSV(data);
 }
 
-// --- API Routes ---
+
 
 app.get('/api/todays-slots', async (req, res) => {
   try {
     try {
-      await fs.access(CSV_DB); // Check if file exists asynchronously
+      await fs.access(CSV_DB); 
     } catch {
-      return res.json([]); // File does not exist
+      return res.json([]); 
     }
 
     const csvData = await fs.readFile(CSV_DB, 'utf8');
@@ -219,3 +216,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Port:     ${PORT}`);
   console.log(`Admin:    /admin.html (Protected by Password)\n`);
 });
+
