@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs').promises; // Switched to promises for non-blocking I/O
+const fs = require('fs').promises; 
 const path = require('path');
 const session = require('express-session');
 const app = express();
